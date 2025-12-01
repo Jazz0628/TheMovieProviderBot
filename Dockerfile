@@ -1,12 +1,23 @@
 FROM python:3.10.8-slim-buster
 
-RUN apt update && apt upgrade -y
-RUN apt install git -y
-COPY requirements.txt /requirements.txt
+# Install system packages
+RUN apt update && apt install -y git && apt clean
 
-RUN cd /
-RUN pip3 install -U pip && pip3 install -U -r requirements.txt
-RUN mkdir /TheMovieProviderBot
+# Set working directory
 WORKDIR /TheMovieProviderBot
-COPY start.sh /start.sh
-CMD ["/bin/bash", "/start.sh"]
+
+# Copy requirements first (better layer caching)
+COPY requirements.txt .
+
+# Install Python dependencies
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt
+
+# Copy all project files
+COPY . .
+
+# Make start.sh executable
+RUN chmod +x /start.sh
+
+# Start the bot
+CMD ["/bin/bash", "start.sh"]
